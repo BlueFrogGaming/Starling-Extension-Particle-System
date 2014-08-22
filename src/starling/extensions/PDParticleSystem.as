@@ -11,20 +11,20 @@
 package starling.extensions
 {
     import flash.display3D.Context3DBlendFactor;
-    
+
     import starling.textures.Texture;
     import starling.utils.deg2rad;
-    
+
     public class PDParticleSystem extends ParticleSystem
     {
         private const EMITTER_TYPE_GRAVITY:int = 0;
         private const EMITTER_TYPE_RADIAL:int  = 1;
-        
+
         // emitter configuration                            // .pex element name
         private var mEmitterType:int;                       // emitterType
         private var mEmitterXVariance:Number;               // sourcePositionVariance x
         private var mEmitterYVariance:Number;               // sourcePositionVariance y
-        
+
         // particle configuration
         private var mMaxNumParticles:int;                   // maxParticles
         private var mLifespan:Number;                       // particleLifeSpan
@@ -39,7 +39,7 @@ package starling.extensions
         private var mStartRotationVariance:Number;          // rotationStartVariance
         private var mEndRotation:Number;                    // rotationEnd
         private var mEndRotationVariance:Number;            // rotationEndVariance
-        
+
         // gravity configuration
         private var mSpeed:Number;                          // speed
         private var mSpeedVariance:Number;                  // speedVariance
@@ -49,89 +49,89 @@ package starling.extensions
         private var mRadialAccelerationVariance:Number;     // radialAccelerationVariance
         private var mTangentialAcceleration:Number;         // tangentialAcceleration
         private var mTangentialAccelerationVariance:Number; // tangentialAccelerationVariance
-        
-        // radial configuration 
+
+        // radial configuration
         private var mMaxRadius:Number;                      // maxRadius
         private var mMaxRadiusVariance:Number;              // maxRadiusVariance
         private var mMinRadius:Number;                      // minRadius
         private var mRotatePerSecond:Number;                // rotatePerSecond
         private var mRotatePerSecondVariance:Number;        // rotatePerSecondVariance
-        
+
         // color configuration
         private var mStartColor:ColorArgb;                  // startColor
         private var mStartColorVariance:ColorArgb;          // startColorVariance
         private var mEndColor:ColorArgb;                    // finishColor
         private var mEndColorVariance:ColorArgb;            // finishColorVariance
-        
+
         public function PDParticleSystem(config:XML, texture:Texture)
         {
             parseConfig(config);
-            
+
             var emissionRate:Number = mMaxNumParticles / mLifespan;
             super(texture, emissionRate, mMaxNumParticles, mMaxNumParticles,
                   mBlendFactorSource, mBlendFactorDestination);
-            
+
             mPremultipliedAlpha = false;
         }
-        
+
         protected override function createParticle():Particle
         {
             return new PDParticle();
         }
-        
+
         protected override function initParticle(aParticle:Particle):void
         {
-            var particle:PDParticle = aParticle as PDParticle; 
-         
+            var particle:PDParticle = aParticle as PDParticle;
+
             // for performance reasons, the random variances are calculated inline instead
             // of calling a function
-            
+
             var lifespan:Number = mLifespan + mLifespanVariance * (Math.random() * 2.0 - 1.0);
-            
+
             particle.currentTime = 0.0;
             particle.totalTime = lifespan > 0.0 ? lifespan : 0.0;
-            
+
             if (lifespan <= 0.0) return;
-            
+
             particle.x = mEmitterX + mEmitterXVariance * (Math.random() * 2.0 - 1.0);
             particle.y = mEmitterY + mEmitterYVariance * (Math.random() * 2.0 - 1.0);
             particle.startX = mEmitterX;
             particle.startY = mEmitterY;
-            
+
             var angle:Number = mEmitAngle + mEmitAngleVariance * (Math.random() * 2.0 - 1.0);
             var speed:Number = mSpeed + mSpeedVariance * (Math.random() * 2.0 - 1.0);
             particle.velocityX = speed * Math.cos(angle);
             particle.velocityY = speed * Math.sin(angle);
-            
+
             particle.emitRadius = mMaxRadius + mMaxRadiusVariance * (Math.random() * 2.0 - 1.0);
             particle.emitRadiusDelta = (mMaxRadius - mMinRadius) / lifespan;
-            particle.emitRotation = mEmitAngle + mEmitAngleVariance * (Math.random() * 2.0 - 1.0); 
-            particle.emitRotationDelta = mRotatePerSecond + mRotatePerSecondVariance * (Math.random() * 2.0 - 1.0); 
+            particle.emitRotation = mEmitAngle + mEmitAngleVariance * (Math.random() * 2.0 - 1.0);
+            particle.emitRotationDelta = mRotatePerSecond + mRotatePerSecondVariance * (Math.random() * 2.0 - 1.0);
             particle.radialAcceleration = mRadialAcceleration + mRadialAccelerationVariance * (Math.random() * 2.0 - 1.0);
             particle.tangentialAcceleration = mTangentialAcceleration + mTangentialAccelerationVariance * (Math.random() * 2.0 - 1.0);
-            
-            var startSize:Number = mStartSize + mStartSizeVariance * (Math.random() * 2.0 - 1.0); 
+
+            var startSize:Number = mStartSize + mStartSizeVariance * (Math.random() * 2.0 - 1.0);
             var endSize:Number = mEndSize + mEndSizeVariance * (Math.random() * 2.0 - 1.0);
             if (startSize < 0.1) startSize = 0.1;
             if (endSize < 0.1)   endSize = 0.1;
-            particle.scale = startSize / texture.width;
-            particle.scaleDelta = ((endSize - startSize) / lifespan) / texture.width;
-            
+            particle.scale = startSize / (texture.frame ? texture.frame.width : texture.width);
+            particle.scaleDelta = ((endSize - startSize) / lifespan) / (texture.frame ? texture.frame.width : texture.width);
+
             // colors
-            
+
             var startColor:ColorArgb = particle.colorArgb;
             var colorDelta:ColorArgb = particle.colorArgbDelta;
-            
+
             startColor.red   = mStartColor.red;
             startColor.green = mStartColor.green;
             startColor.blue  = mStartColor.blue;
             startColor.alpha = mStartColor.alpha;
-            
+
             if (mStartColorVariance.red != 0)   startColor.red   += mStartColorVariance.red   * (Math.random() * 2.0 - 1.0);
             if (mStartColorVariance.green != 0) startColor.green += mStartColorVariance.green * (Math.random() * 2.0 - 1.0);
             if (mStartColorVariance.blue != 0)  startColor.blue  += mStartColorVariance.blue  * (Math.random() * 2.0 - 1.0);
             if (mStartColorVariance.alpha != 0) startColor.alpha += mStartColorVariance.alpha * (Math.random() * 2.0 - 1.0);
-            
+
             var endColorRed:Number   = mEndColor.red;
             var endColorGreen:Number = mEndColor.green;
             var endColorBlue:Number  = mEndColor.blue;
@@ -141,36 +141,36 @@ package starling.extensions
             if (mEndColorVariance.green != 0) endColorGreen += mEndColorVariance.green * (Math.random() * 2.0 - 1.0);
             if (mEndColorVariance.blue != 0)  endColorBlue  += mEndColorVariance.blue  * (Math.random() * 2.0 - 1.0);
             if (mEndColorVariance.alpha != 0) endColorAlpha += mEndColorVariance.alpha * (Math.random() * 2.0 - 1.0);
-            
+
             colorDelta.red   = (endColorRed   - startColor.red)   / lifespan;
             colorDelta.green = (endColorGreen - startColor.green) / lifespan;
             colorDelta.blue  = (endColorBlue  - startColor.blue)  / lifespan;
             colorDelta.alpha = (endColorAlpha - startColor.alpha) / lifespan;
-            
+
             // rotation
-            
-            var startRotation:Number = mStartRotation + mStartRotationVariance * (Math.random() * 2.0 - 1.0); 
+
+            var startRotation:Number = mStartRotation + mStartRotationVariance * (Math.random() * 2.0 - 1.0);
             var endRotation:Number   = mEndRotation   + mEndRotationVariance   * (Math.random() * 2.0 - 1.0);
-            
+
             particle.rotation = startRotation;
             particle.rotationDelta = (endRotation - startRotation) / lifespan;
         }
-        
+
         protected override function advanceParticle(aParticle:Particle, passedTime:Number):void
         {
             var particle:PDParticle = aParticle as PDParticle;
-            
+
             var restTime:Number = particle.totalTime - particle.currentTime;
             passedTime = restTime > passedTime ? passedTime : restTime;
             particle.currentTime += passedTime;
-            
+
             if (mEmitterType == EMITTER_TYPE_RADIAL)
             {
                 particle.emitRotation += particle.emitRotationDelta * passedTime;
                 particle.emitRadius   -= particle.emitRadiusDelta   * passedTime;
                 particle.x = mEmitterX - Math.cos(particle.emitRotation) * particle.emitRadius;
                 particle.y = mEmitterY - Math.sin(particle.emitRotation) * particle.emitRadius;
-                
+
                 if (particle.emitRadius < mMinRadius)
                     particle.currentTime = particle.totalTime;
             }
@@ -180,42 +180,42 @@ package starling.extensions
                 var distanceY:Number = particle.y - particle.startY;
                 var distanceScalar:Number = Math.sqrt(distanceX*distanceX + distanceY*distanceY);
                 if (distanceScalar < 0.01) distanceScalar = 0.01;
-                
+
                 var radialX:Number = distanceX / distanceScalar;
                 var radialY:Number = distanceY / distanceScalar;
                 var tangentialX:Number = radialX;
                 var tangentialY:Number = radialY;
-                
+
                 radialX *= particle.radialAcceleration;
                 radialY *= particle.radialAcceleration;
-                
+
                 var newY:Number = tangentialX;
                 tangentialX = -tangentialY * particle.tangentialAcceleration;
                 tangentialY = newY * particle.tangentialAcceleration;
-                
+
                 particle.velocityX += passedTime * (mGravityX + radialX + tangentialX);
                 particle.velocityY += passedTime * (mGravityY + radialY + tangentialY);
                 particle.x += particle.velocityX * passedTime;
                 particle.y += particle.velocityY * passedTime;
             }
-            
+
             particle.scale += particle.scaleDelta * passedTime;
             particle.rotation += particle.rotationDelta * passedTime;
-            
+
             particle.colorArgb.red   += particle.colorArgbDelta.red   * passedTime;
             particle.colorArgb.green += particle.colorArgbDelta.green * passedTime;
             particle.colorArgb.blue  += particle.colorArgbDelta.blue  * passedTime;
             particle.colorArgb.alpha += particle.colorArgbDelta.alpha * passedTime;
-            
+
             particle.color = particle.colorArgb.toRgb();
             particle.alpha = particle.colorArgb.alpha;
         }
-        
+
         private function updateEmissionRate():void
         {
             emissionRate = mMaxNumParticles / mLifespan;
         }
-        
+
         private function parseConfig(config:XML):void
         {
             mEmitterXVariance = parseFloat(config.sourcePositionVariance.attribute("x"));
@@ -253,27 +253,27 @@ package starling.extensions
             mEndColorVariance = getColor(config.finishColorVariance);
             mBlendFactorSource = getBlendFunc(config.blendFuncSource);
             mBlendFactorDestination = getBlendFunc(config.blendFuncDestination);
-            
+
             // compatibility with future Particle Designer versions
             // (might fix some of the uppercase/lowercase typos)
-            
+
             if (isNaN(mEndSizeVariance))
                 mEndSizeVariance = getFloatValue(config.finishParticleSizeVariance);
             if (isNaN(mLifespan))
                 mLifespan = Math.max(0.01, getFloatValue(config.particleLifespan));
             if (isNaN(mLifespanVariance))
                 mLifespanVariance = getFloatValue(config.particleLifeSpanVariance);
-            
+
             function getIntValue(element:XMLList):int
             {
                 return parseInt(element.attribute("value"));
             }
-            
+
             function getFloatValue(element:XMLList):Number
             {
                 return parseFloat(element.attribute("value"));
             }
-            
+
             function getColor(element:XMLList):ColorArgb
             {
                 var color:ColorArgb = new ColorArgb();
@@ -283,7 +283,7 @@ package starling.extensions
                 color.alpha = parseFloat(element.attribute("alpha"));
                 return color;
             }
-            
+
             function getBlendFunc(element:XMLList):String
             {
                 var value:int = getIntValue(element);
@@ -303,7 +303,7 @@ package starling.extensions
                 }
             }
         }
-        
+
         public function get emitterType():int { return mEmitterType; }
         public function set emitterType(value:int):void { mEmitterType = value; }
 
@@ -314,16 +314,16 @@ package starling.extensions
         public function set emitterYVariance(value:Number):void { mEmitterYVariance = value; }
 
         public function get maxNumParticles():int { return mMaxNumParticles; }
-        public function set maxNumParticles(value:int):void 
-        { 
+        public function set maxNumParticles(value:int):void
+        {
             maxCapacity = value;
-            mMaxNumParticles = maxCapacity; 
-            updateEmissionRate(); 
+            mMaxNumParticles = maxCapacity;
+            updateEmissionRate();
         }
 
         public function get lifespan():Number { return mLifespan; }
-        public function set lifespan(value:Number):void 
-        { 
+        public function set lifespan(value:Number):void
+        {
             mLifespan = Math.max(0.01, value);
             updateEmissionRate();
         }
@@ -349,18 +349,18 @@ package starling.extensions
         public function get emitAngleVariance():Number { return mEmitAngleVariance; }
         public function set emitAngleVariance(value:Number):void { mEmitAngleVariance = value; }
 
-        public function get startRotation():Number { return mStartRotation; } 
+        public function get startRotation():Number { return mStartRotation; }
         public function set startRotation(value:Number):void { mStartRotation = value; }
-        
-        public function get startRotationVariance():Number { return mStartRotationVariance; } 
+
+        public function get startRotationVariance():Number { return mStartRotationVariance; }
         public function set startRotationVariance(value:Number):void { mStartRotationVariance = value; }
-        
-        public function get endRotation():Number { return mEndRotation; } 
+
+        public function get endRotation():Number { return mEndRotation; }
         public function set endRotation(value:Number):void { mEndRotation = value; }
-        
-        public function get endRotationVariance():Number { return mEndRotationVariance; } 
+
+        public function get endRotationVariance():Number { return mEndRotationVariance; }
         public function set endRotationVariance(value:Number):void { mEndRotationVariance = value; }
-        
+
         public function get speed():Number { return mSpeed; }
         public function set speed(value:Number):void { mSpeed = value; }
 
